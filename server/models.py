@@ -18,11 +18,24 @@ class ContentCreate(BaseModel):
     event_type: str = Field("PAGE_VISIT", description="Olay türü")
 
 
+class ImageInfo(BaseModel):
+    """Kaydedilen görsel bilgisi."""
+
+    id: int
+    file_name: str
+    file_size: int
+    url: str
+
+
 class ContentResponse(BaseModel):
     """POST /api/v1/content başarılı yanıt modeli."""
 
     content_id: str
     status: str = "received"
+    saved_images_count: int = 0
+    is_blocked: bool = False
+    block_reason: str = ""
+    blocked_url: str = ""
     timestamp: datetime
 
 
@@ -34,6 +47,9 @@ class ContentLogItem(BaseModel):
     page_title: str
     timestamp: datetime
     browser_package: str
+    is_blocked: bool = False
+    block_reason: str = ""
+    images: list[ImageInfo] = []
 
 
 class ContentLogResponse(BaseModel):
@@ -41,3 +57,10 @@ class ContentLogResponse(BaseModel):
 
     total: int
     items: list[ContentLogItem]
+
+
+class BlacklistRuleRequest(BaseModel):
+    """Dinamik kara liste kuralı ekleme isteği."""
+
+    pattern: str = Field(..., description="Engellenecek domain veya anahtar kelime")
+    reason: str = Field("Zararlı içerik tespit edildi", description="Engelleme sebebi")

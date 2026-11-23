@@ -26,6 +26,64 @@ class AccessibilityService {
     }
   }
 
+  Future<bool> blockSite({required String url, required String reason}) async {
+    try {
+      final bool? blocked = await _methodChannel.invokeMethod('blockSite', {
+        'url': url,
+        'reason': reason,
+      });
+      return blocked ?? false;
+    } on PlatformException catch (e) {
+      print("Failed to invoke blockSite: '${e.message}'.");
+      return false;
+    }
+  }
+
+  Future<void> clearLocalBlacklist() async {
+    try {
+      await _methodChannel.invokeMethod('clearBlacklist');
+    } on PlatformException catch (e) {
+      print("Failed to clear local blacklist: '${e.message}'.");
+    }
+  }
+
+  Future<Map<String, String?>> getAuthInfo() async {
+    try {
+      final Map<dynamic, dynamic>? res =
+          await _methodChannel.invokeMethod('getAuthInfo');
+      if (res == null) return {};
+      return res.map((k, v) => MapEntry(k.toString(), v?.toString()));
+    } on PlatformException {
+      return {};
+    }
+  }
+
+  Future<void> saveAuthInfo({
+    String? token,
+    String? deviceId,
+    String? deviceName,
+    String? serverUrl,
+  }) async {
+    try {
+      await _methodChannel.invokeMethod('saveAuthInfo', {
+        'token': token,
+        'device_id': deviceId,
+        'device_name': deviceName,
+        'server_url': serverUrl,
+      });
+    } on PlatformException catch (e) {
+      print("Failed to save auth info: '${e.message}'.");
+    }
+  }
+
+  Future<void> clearAuthInfo() async {
+    try {
+      await _methodChannel.invokeMethod('clearAuthInfo');
+    } on PlatformException catch (e) {
+      print("Failed to clear auth info: '${e.message}'.");
+    }
+  }
+
   Stream<CapturedContent> get contentStream {
     _contentStream ??= _eventChannel.receiveBroadcastStream().map((dynamic event) {
       Map<String, dynamic> map;

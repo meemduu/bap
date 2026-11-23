@@ -1,89 +1,116 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../models/captured_content.dart';
 import '../services/content_sender.dart';
 
-class LogScreen extends StatefulWidget {
+class LogScreen extends StatelessWidget {
   const LogScreen({super.key});
 
   @override
-  State<LogScreen> createState() => _LogScreenState();
-}
-
-class _LogScreenState extends State<LogScreen> {
-  List<CapturedContent> _logs = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchLogs();
-  }
-
-  Future<void> _fetchLogs() async {
-    setState(() {
-      _isLoading = true;
-    });
-    
-    try {
-      final logs = await context.read<ContentSender>().fetchLogs();
-      setState(() {
-        _logs = logs;
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final sender = context.watch<ContentSender>();
+    final logs = sender.history;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Captured Logs'),
+        title: Text('Olay Geçmişi (${logs.length})'),
       ),
-      body: RefreshIndicator(
-        onRefresh: _fetchLogs,
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _logs.isEmpty
-                ? ListView(
-                    children: const [
-                      SizedBox(height: 100),
-                      Center(child: Text('No logs found on server.')),
-                    ],
-                  )
-                : ListView.builder(
-                    itemCount: _logs.length,
-                    itemBuilder: (context, index) {
-                      final log = _logs[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: ListTile(
-                          leading: const Icon(Icons.language),
-                          title: Text(log.pageTitle.isNotEmpty ? log.pageTitle : 'No Title', maxLines: 1, overflow: TextOverflow.ellipsis),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+      body: logs.isEmpty
+          ? const Center(
+              child: Text('Bu oturumda henüz yakalanan olay bulunmuyor.'),
+            )
+          : ListView.builder(
+              itemCount: logs.length,
+              itemBuilder: (context, index) {
+                final log = logs[index];
+                return Card(
+                  color:
+                      log.isBlocked ? Colors.red.withValues(alpha: 0.08) : null,
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ListTile(
+                    leading: Icon(
+                      log.isBlocked
+                          ? Icons.block
+                          : (log.synced ? Icons.cloud_done : Icons.schedule),
+                      color: log.isBlocked
+                          ? Colors.red
+                          : (log.synced ? Colors.green : Colors.orange),
+                    ),
+                    title: Text(
+                      log.url.isNotEmpty
+                          ? log.url
+                          : (log.pageTitle.isNotEmpty
+                              ? log.pageTitle
+                              : log.appName),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${log.browserPackage} (${log.eventType})',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Metin: ${log.screenText.length} adet | Düğüm: ${log.nodes.length} adet',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          DateFormat.yMd().add_Hms().format(log.timestamp),
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        if (log.isBlocked && log.blockReason.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Engellendi: ${log.blockReason}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                        if (log.imagePaths.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Row(
                             children: [
-                              Text(log.url, maxLines: 1, overflow: TextOverflow.ellipsis),
-                              const SizedBox(height: 4),
-                              Text(DateFormat.yMd().add_Hms().format(log.timestamp), style: const TextStyle(fontSize: 12)),
+                              const Icon(
+                                Icons.photo_library,
+                                size: 14,
+                                color: Colors.teal,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${log.imagePaths.length} ekran görüntüsü',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.teal,
+                                ),
+                              ),
                             ],
                           ),
-                          trailing: Icon(
-                            log.synced ? Icons.cloud_done : Icons.cloud_off,
-                            color: log.synced ? Colors.green : Colors.grey,
-                          ),
-                          isThreeLine: true,
-                        ),
-                      );
-                    },
+                        ],
+                      ],
+                    ),
+                    trailing: Text(
+                      log.synced ? 'Gönderildi' : 'Kuyrukta',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: log.synced ? Colors.green : Colors.orange,
+                      ),
+                    ),
+                    isThreeLine: true,
                   ),
-      ),
+                );
+              },
+            ),
     );
   }
 }

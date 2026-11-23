@@ -1,21 +1,31 @@
 # Root & General
 .DS_Store
+__MACOSX/
+._*
 *.log
 *.tmp
 .env
 .vscode/
 .idea/
 
+# Local docs & integration folders
+memduh-integration/
+blocking_implementation_plan.md
+method2_implementation_plan.md
+gida-rehber.md
+gida-rehber.pdf
+
 # Python / Server
-server/__pycache__/
-server/*.pyc
-server/*.pyo
-server/*.pyd
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 server/.venv/
 server/venv/
 server/ENV/
 server/*.db
 server/*.sqlite3
+server/storage/
 
 # Flutter / Dart / gida_app
 gida_app/build/

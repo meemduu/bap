@@ -39,6 +39,46 @@ class MainActivity : FlutterActivity() {
                     startActivity(intent)
                     result.success(true)
                 }
+                "blockSite" -> {
+                    val url = call.argument<String>("url") ?: ""
+                    val reason = call.argument<String>("reason") ?: "Zararlı içerik tespit edildi"
+                    val blockedImmediately = GidaAccessibilityService.instance?.handleBlockCommand(url, reason) ?: false
+                    result.success(blockedImmediately)
+                }
+                "clearBlacklist" -> {
+                    GidaAccessibilityService.instance?.clearLocalBlacklist()
+                    result.success(true)
+                }
+                "getAuthInfo" -> {
+                    val prefs = getSharedPreferences("gida_cloud_prefs", Context.MODE_PRIVATE)
+                    val map = mapOf(
+                        "token" to prefs.getString("token", null),
+                        "device_id" to prefs.getString("device_id", null),
+                        "device_name" to prefs.getString("device_name", null),
+                        "server_url" to prefs.getString("server_url", null)
+                    )
+                    result.success(map)
+                }
+                "saveAuthInfo" -> {
+                    val prefs = getSharedPreferences("gida_cloud_prefs", Context.MODE_PRIVATE)
+                    prefs.edit().apply {
+                        call.argument<String>("token")?.let { putString("token", it) }
+                        call.argument<String>("device_id")?.let { putString("device_id", it) }
+                        call.argument<String>("device_name")?.let { putString("device_name", it) }
+                        call.argument<String>("server_url")?.let { putString("server_url", it) }
+                        apply()
+                    }
+                    result.success(true)
+                }
+                "clearAuthInfo" -> {
+                    val prefs = getSharedPreferences("gida_cloud_prefs", Context.MODE_PRIVATE)
+                    prefs.edit().apply {
+                        remove("token")
+                        remove("device_id")
+                        apply()
+                    }
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }
